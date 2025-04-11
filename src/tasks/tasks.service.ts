@@ -8,6 +8,19 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { FilterTasksDto } from './dto/filter.dto';
 import { Task } from './entities/task.entity';
 
+const ONE_MINUTE = 60 * 1000;
+
+const TasksCreationLimits = {
+  user: {
+    timeWindow: ONE_MINUTE,
+    limit: 5,
+  },
+  global: {
+    timeWindow: 5 * ONE_MINUTE,
+    limit: 20,
+  },
+} as const;
+
 @Injectable()
 export class TasksService {
   private tasks: Task[] = [];
@@ -19,9 +32,10 @@ export class TasksService {
     const recentUserTasks = this.tasks.filter(
       (t) =>
         t.userId === createTaskDto.userId &&
-        now.getTime() - new Date(t.createdAt).getTime() <= 60 * 1000,
+        now.getTime() - new Date(t.createdAt).getTime() <=
+          TasksCreationLimits.user.timeWindow,
     );
-    if (recentUserTasks.length >= 5) {
+    if (recentUserTasks.length >= TasksCreationLimits.user.limit) {
       throw new BadRequestException(
         'User cannot create more than 5 tasks per minute',
       );
@@ -44,9 +58,11 @@ export class TasksService {
     }
 
     const recentAllTasks = this.tasks.filter(
-      (t) => now.getTime() - new Date(t.createdAt).getTime() <= 5 * 60 * 1000,
+      (t) =>
+        now.getTime() - new Date(t.createdAt).getTime() <=
+        TasksCreationLimits.global.timeWindow,
     );
-    if (recentAllTasks.length >= 20) {
+    if (recentAllTasks.length >= TasksCreationLimits.global.limit) {
       throw new BadRequestException(
         'Global task creation limit exceeded (20 tasks / 5 minutes)',
       );
