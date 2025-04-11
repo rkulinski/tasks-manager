@@ -1,15 +1,57 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { Task } from './entities/task.entity';
 import { FilterTasksDto } from './dto/filter.dto';
+import { Task } from './entities/task.entity';
 
 @Injectable()
 export class TasksService {
   private tasks: Task[] = [];
 
   create(createTaskDto: CreateTaskDto): Task {
+    const now = new Date();
     const task = new Task(createTaskDto);
+
+    const recentUserTasks = this.tasks.filter(
+      (t) =>
+        t.userId === createTaskDto.userId &&
+        now.getTime() - new Date(t.createdAt).getTime() <= 60 * 1000,
+    );
+    if (recentUserTasks.length >= 5) {
+      throw new BadRequestException(
+        'User cannot create more than 5 tasks per minute',
+      );
+    }
+
+    const newStart = new Date(createTaskDto.startTime).getTime();
+    const newEnd = new Date(createTaskDto.endTime).getTime();
+
+    const overlapping = this.tasks.find((t) => {
+      if (t.userId !== createTaskDto.userId) return false;
+      const existingStart = new Date(t.startTime).getTime();
+      const existingEnd = new Date(t.endTime).getTime();
+      return newStart < existingEnd && newEnd > existingStart;
+    });
+
+    if (overlapping) {
+      throw new BadRequestException(
+        'Task overlaps with an existing task for this user',
+      );
+    }
+
+    const recentAllTasks = this.tasks.filter(
+      (t) => now.getTime() - new Date(t.createdAt).getTime() <= 5 * 60 * 1000,
+    );
+    if (recentAllTasks.length >= 20) {
+      throw new BadRequestException(
+        'Global task creation limit exceeded (20 tasks / 5 minutes)',
+      );
+    }
+
     this.tasks.push(task);
     return task;
   }
@@ -34,6 +76,25 @@ export class TasksService {
 
   update(id: string, updateTaskDto: UpdateTaskDto): Task {
     const task = this.findOne(id);
+
+    if (updateTaskDto.startTime && updateTaskDto.endTime) {
+      const newStart = new Date(updateTaskDto.startTime).getTime();
+      const newEnd = new Date(updateTaskDto.endTime).getTime();
+
+      const overlapping = this.tasks.find((t) => {
+        if (t.userId !== task.userId || t.id === task.id) return false;
+        const existingStart = new Date(t.startTime).getTime();
+        const existingEnd = new Date(t.endTime).getTime();
+        return newStart < existingEnd && newEnd > existingStart;
+      });
+
+      if (overlapping) {
+        throw new BadRequestException(
+          'Task update would overlap with another task for this user',
+        );
+      }
+    }
+
     Object.assign(task, updateTaskDto);
     task.updatedAt = new Date();
     return task;
