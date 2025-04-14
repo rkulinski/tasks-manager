@@ -26,7 +26,7 @@ describe('TasksController (e2e)', () => {
   });
 
   afterEach(() => {
-    // @ts-expect-error skip for testing
+    // @ts-expect-error: clear tasks after each test
     tasksService.tasks = [];
   });
 
@@ -50,7 +50,10 @@ describe('TasksController (e2e)', () => {
       .send(mockTask)
       .expect(201);
 
-    expect(response.body).toMatchObject({
+    const responsePayload = response.body as ReturnType<
+      TasksController['create']
+    >;
+    expect(responsePayload).toMatchObject({
       title: mockTask.title,
       userId: mockTask.userId,
       status: TaskStatus.OPEN,
@@ -67,10 +70,10 @@ describe('TasksController (e2e)', () => {
     const response = await request(app.getHttpServer())
       .get('/tasks')
       .expect(200);
+
     const responsePayload = response.body as ReturnType<
       TasksController['findAll']
     >;
-
     expect(Array.isArray(responsePayload)).toBe(true);
     expect(responsePayload.length).toEqual(1);
     expect(responsePayload[0].title).toEqual(mockTask.title);
@@ -100,10 +103,80 @@ describe('TasksController (e2e)', () => {
     const response = await request(app.getHttpServer())
       .get('/tasks')
       .expect(200);
+
     const responsePayload = response.body as ReturnType<
       TasksController['findAll']
     >;
-
     expect(responsePayload.length).toEqual(2);
+  });
+
+  it('/tasks (GET with filter) should return only tasks for a specific user', async () => {
+    await request(app.getHttpServer())
+      .post('/tasks')
+      .send(createTask({ userId: 'user1' }));
+    await request(app.getHttpServer())
+      .post('/tasks')
+      .send(createTask({ userId: 'user2' }));
+
+    const response = await request(app.getHttpServer())
+      .get('/tasks?userId=user1')
+      .expect(200);
+
+    const responsePayload = response.body as ReturnType<
+      TasksController['findAll']
+    >;
+    expect(responsePayload.length).toBe(1);
+    expect(responsePayload[0].userId).toBe('user1');
+  });
+
+  it('/tasks/:id (GET) should return a single task by id', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/tasks')
+      .send(createTask());
+    const createdTask = res.body as ReturnType<TasksController['create']>;
+
+    const getRes = await request(app.getHttpServer())
+      .get(`/tasks/${createdTask.id}`)
+      .expect(200);
+
+    const responsePayload = getRes.body as ReturnType<
+      TasksController['findOne']
+    >;
+    expect(responsePayload.id).toBe(createdTask.id);
+    expect(responsePayload.title).toBe(createdTask.title);
+  });
+
+  it('/tasks/:id (PATCH) should update a task', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/tasks')
+      .send(createTask());
+    const createdTask = res.body as ReturnType<TasksController['create']>;
+
+    const updatedTitle = 'Updated Task Title';
+
+    const patchRes = await request(app.getHttpServer())
+      .patch(`/tasks/${createdTask.id}`)
+      .send({ title: updatedTitle })
+      .expect(200);
+
+    const responsePayload = patchRes.body as ReturnType<
+      TasksController['update']
+    >;
+    expect(responsePayload.title).toBe(updatedTitle);
+  });
+
+  it('/tasks/:id (DELETE) should delete a task', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/tasks')
+      .send(createTask());
+    const createdTask = res.body as ReturnType<TasksController['create']>;
+
+    await request(app.getHttpServer())
+      .delete(`/tasks/${createdTask.id}`)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(`/tasks/${createdTask.id}`)
+      .expect(404);
   });
 });
