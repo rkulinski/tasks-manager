@@ -85,3 +85,30 @@ $ npm run test:cov
 }
 
 ```
+
+## Continuous Integration
+
+This project utilizes GitHub Actions for Continuous Integration (CI) to ensure code quality and automate testing and deployment processes.
+
+- **Automated Testing**: Whenever a pull request is created or code is pushed to the main branch, the CI pipeline automatically runs the test suite.
+- **Linting and Formatting Checks**: The CI process includes running `eslint` and `prettier` to maintain code consistency.
+
+### Configuration
+
+The CI pipeline is configured in the `.github/workflows` directory. Make sure to check and update these workflow files to suit your project needs.
+
+## Linters and Formatters
+
+This project utilizes `eslint` for JavaScript linting and `prettier` for code formatting, ensuring consistent and high-quality code.
+
+- To fix linting errors automatically, use the `lint:fix` command provided in the `package.json` file:
+
+  ```bash
+  npm run lint
+  ```
+
+- To format the code, use the `format` command:
+
+  ```bash
+  npm run format
+  ```
