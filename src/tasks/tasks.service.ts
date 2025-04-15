@@ -7,6 +7,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { FilterTasksDto } from './dto/filter.dto';
 import { Task } from './entities/task.entity';
+import { TooManyRequestsException } from 'src/exceptions';
 
 const ONE_MINUTE = 60 * 1000;
 
@@ -36,7 +37,7 @@ export class TasksService {
           TasksCreationLimits.user.timeWindow,
     );
     if (recentUserTasks.length >= TasksCreationLimits.user.limit) {
-      throw new BadRequestException(
+      throw new TooManyRequestsException(
         'User cannot create more than 5 tasks per minute',
       );
     }
@@ -66,7 +67,7 @@ export class TasksService {
         TasksCreationLimits.global.timeWindow,
     );
     if (recentAllTasks.length >= TasksCreationLimits.global.limit) {
-      throw new BadRequestException(
+      throw new TooManyRequestsException(
         'Global task creation limit exceeded (20 tasks / 5 minutes)',
       );
     }

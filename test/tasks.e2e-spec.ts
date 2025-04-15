@@ -2,8 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from 'src/app.module';
-import { CreateTaskDto } from 'src/tasks/dto/create-task.dto';
-import { TaskStatus } from 'src/tasks/dto/create-task.dto';
+import { CreateTaskDto, TaskStatus } from 'src/tasks/dto/create-task.dto';
 import { TasksService } from 'src/tasks/tasks.service';
 import { TasksController } from 'src/tasks/tasks.controller';
 
@@ -129,6 +128,32 @@ describe('TasksController (e2e)', () => {
     expect(responsePayload[0].userId).toBe('user1');
   });
 
+  it('/tasks (GET) should filter by status', async () => {
+    await request(app.getHttpServer())
+      .post('/tasks')
+      .send(createTask({ userId: 'user1', status: TaskStatus.OPEN }))
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/tasks')
+      .send(createTask({ userId: 'user2', status: TaskStatus.COMPLETED }))
+      .expect(201);
+
+    const openRes = await request(app.getHttpServer())
+      .get(`/tasks?status=${TaskStatus.OPEN}`)
+      .expect(200);
+    const openPayload = openRes.body as ReturnType<TasksController['findAll']>;
+    expect(openPayload.length).toBe(1);
+    expect(openPayload[0].userId).toBe('user1');
+
+    const doneRes = await request(app.getHttpServer())
+      .get(`/tasks?status=${TaskStatus.COMPLETED}`)
+      .expect(200);
+    const donePayload = doneRes.body as ReturnType<TasksController['findAll']>;
+    expect(openPayload.length).toBe(1);
+    expect(donePayload[0].userId).toBe('user2');
+  });
+
   it('/tasks/:id (GET) should return a single task by id', async () => {
     const res = await request(app.getHttpServer())
       .post('/tasks')
@@ -178,5 +203,68 @@ describe('TasksController (e2e)', () => {
     await request(app.getHttpServer())
       .get(`/tasks/${createdTask.id}`)
       .expect(404);
+  });
+
+  it('should enforce per-user rate limit of 5 tasks per minute', async () => {
+    const now = new Date();
+    for (let i = 0; i < 5; i++) {
+      await request(app.getHttpServer())
+        .post('/tasks')
+        .send(
+          createTask({
+            userId: 'rate-limit-user',
+
+            startTime: new Date(now.getTime() + i).toISOString(),
+            endTime: new Date(now.getTime() + i + 1).toISOString(),
+          }),
+        )
+        .expect(201);
+    }
+
+    await request(app.getHttpServer())
+      .post('/tasks')
+      .send(createTask({ userId: 'rate-limit-user' }))
+      .expect(429);
+  });
+
+  it('should reject overlapping tasks for same user', async () => {
+    const baseStart = new Date('2025-04-15T10:00:00Z');
+    const baseEnd = new Date('2025-04-15T11:00:00Z');
+
+    await request(app.getHttpServer())
+      .post('/tasks')
+      .send(
+        createTask({
+          userId: 'overlap-user',
+          startTime: baseStart.toISOString(),
+          endTime: baseEnd.toISOString(),
+        }),
+      )
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/tasks')
+      .send(
+        createTask({
+          userId: 'overlap-user',
+          startTime: new Date(baseStart.getTime() + 1).toISOString(),
+          endTime: new Date(baseEnd.getTime() + 1).toISOString(),
+        }),
+      )
+      .expect(400);
+  });
+
+  it('should enforce global limit of 20 tasks per 5 minutes', async () => {
+    for (let i = 0; i < 20; i++) {
+      await request(app.getHttpServer())
+        .post('/tasks')
+        .send(createTask({ userId: `global-user-${i}` }))
+        .expect(201);
+    }
+
+    await request(app.getHttpServer())
+      .post('/tasks')
+      .send(createTask({ userId: 'global-user-overflow' }))
+      .expect(429);
   });
 });
