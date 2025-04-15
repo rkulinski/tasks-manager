@@ -24,12 +24,17 @@ The API must provide the following functionalities:
 - **API Hosting via Container**: Docker with health check capabilities.
 
 ## Project setup
+The application runs on [http://localhost:3000](http://localhost:3000) by default.
+
+You can start the app using either local setup or Docker:
+
+### Local (without docker)
 
 ```bash
 $ npm install
 ```
 
-## Compile and run the project
+#### Compile and run the project
 
 ```bash
 # development
@@ -40,6 +45,13 @@ $ npm run start:dev
 
 # production mode
 $ npm run start:prod
+```
+
+### With Docker
+
+```bash
+# runs api in docker in development mode
+$ docker compose up
 ```
 
 ## Run tests
