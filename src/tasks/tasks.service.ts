@@ -44,10 +44,13 @@ export class TasksService {
     const newStart = new Date(createTaskDto.startTime).getTime();
     const newEnd = new Date(createTaskDto.endTime).getTime();
 
-    const overlapping = this.tasks.find((t) => {
-      if (t.userId !== createTaskDto.userId) return false;
-      const existingStart = new Date(t.startTime).getTime();
-      const existingEnd = new Date(t.endTime).getTime();
+    const overlapping = this.tasks.find((task) => {
+      if (task.userId !== createTaskDto.userId) {
+        return false;
+      }
+
+      const existingStart = new Date(task.startTime).getTime();
+      const existingEnd = new Date(task.endTime).getTime();
       return newStart < existingEnd && newEnd > existingStart;
     });
 
@@ -58,8 +61,8 @@ export class TasksService {
     }
 
     const recentAllTasks = this.tasks.filter(
-      (t) =>
-        now.getTime() - new Date(t.createdAt).getTime() <=
+      (task) =>
+        now.getTime() - new Date(task.createdAt).getTime() <=
         TasksCreationLimits.global.timeWindow,
     );
     if (recentAllTasks.length >= TasksCreationLimits.global.limit) {
