@@ -1,0 +1,78 @@
+name: CI checks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        uses: rkulinski/tasks-manager/.github/actions/node-app-setup@main
+        with:
+          working-directory: ./
+          node-version: "20"
+      - name: Run Type Check
+        run: npm run type-check
+        working-directory: ./
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        uses: rkulinski/tasks-manager/.github/actions/node-app-setup@main
+        with:
+          working-directory: ./
+          node-version: "20"
+      - name: Run ESLint
+        run: npm run lint
+        working-directory: ./
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        uses: rkulinski/tasks-manager/.github/actions/node-app-setup@main
+        with:
+          working-directory: ./
+          node-version: "20"
+      - name: Compile
+        run: npm run build
+        working-directory: ./
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup
+        uses: rkulinski/tasks-manager/.github/actions/node-app-setup@main
+        with:
+          working-directory: ./
+          node-version: "20"
+      - name: Run Tests
+        working-directory: ./
+        run: npm run test
+
+  e2e-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup
+        uses: rkulinski/tasks-manager/.github/actions/node-app-setup@main
+        with:
+          working-directory: ./
+          node-version: "20"
+      - name: Run Tests
+        working-directory: ./
+        run: npm run test:e2e
