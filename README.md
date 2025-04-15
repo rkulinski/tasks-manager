@@ -1,9 +1,27 @@
-## Description
+# Tasks management
 
-Tasks management
+## API Functionality
 
-Requirements:
-// TODO
+The API must provide the following functionalities:
+
+- **Task Creation**: Allow users to create new tasks.
+- **Mark Task as Completed**: Enable users to mark tasks as completed.
+- **Retrieve All Tasks**: Allow fetching a list of all tasks with the option to filter by status (completed/open).
+- **Retrieve User's Tasks**: Permit fetching a specific user's tasks with the option to filter by status (completed/open).
+
+## Constraints
+
+- **Rate Limiting for Task Creation**: A user can create a maximum of 5 tasks per minute.
+- **Time Conflict Prevention**: Prevent overlapping time slots for tasks belonging to the same user.
+- **Global Task Creation Limit (Optional)**: No more than 20 tasks can be created globally by all users within a 5-minute window.
+
+## Technical Requirements
+
+- **Framework**: NestJS
+- **Language**: TypeScript
+- **Input Data Validation**: `class-validator` for input validation.
+- **Data Storage**: in-memory storage (e.g., `Map<string, Task[]>`).
+- **API Hosting via Container**: Docker with health check capabilities.
 
 ## Project setup
 
