@@ -45,7 +45,10 @@ export class TasksService {
     const newEnd = new Date(createTaskDto.endTime).getTime();
 
     const overlapping = this.tasks.find((t) => {
-      if (t.userId !== createTaskDto.userId) return false;
+      if (t.userId !== createTaskDto.userId) {
+        return false;
+      }
+
       const existingStart = new Date(t.startTime).getTime();
       const existingEnd = new Date(t.endTime).getTime();
       return newStart < existingEnd && newEnd > existingStart;
