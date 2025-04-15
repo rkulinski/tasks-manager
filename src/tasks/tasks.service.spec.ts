@@ -77,8 +77,8 @@ describe('TasksService', () => {
     for (let i = 0; i < 5; i++) {
       service.create(
         createDto({
-          startTime: new Date(now + i * 60000).toISOString(),
-          endTime: new Date(now + (i + 1) * 60000).toISOString(),
+          startTime: new Date(now + i).toISOString(),
+          endTime: new Date(now + (i + 1)).toISOString(),
         }),
       );
     }
@@ -86,8 +86,8 @@ describe('TasksService', () => {
     expect(() => {
       service.create(
         createDto({
-          startTime: new Date(now + 6 * 60000).toISOString(),
-          endTime: new Date(now + 7 * 60000).toISOString(),
+          startTime: new Date(now + 6).toISOString(),
+          endTime: new Date(now + 7).toISOString(),
         }),
       );
     }).toThrow('User cannot create more than 5 tasks per minute');
@@ -95,7 +95,7 @@ describe('TasksService', () => {
 
   it('should prevent overlapping tasks for a user', () => {
     const start = new Date(Date.now());
-    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const end = new Date(start.getTime() + ONE_HOUR);
 
     service.create(
       createDto({
@@ -107,8 +107,8 @@ describe('TasksService', () => {
     expect(() => {
       service.create(
         createDto({
-          startTime: new Date(start.getTime() + 30 * 60 * 1000).toISOString(), // 30min overlap
-          endTime: new Date(end.getTime() + 30 * 60 * 1000).toISOString(),
+          startTime: new Date(start.getTime() + ONE_HOUR * 0.5).toISOString(), // 30min overlap
+          endTime: new Date(end.getTime() + ONE_HOUR * 0.5).toISOString(),
         }),
       );
     }).toThrow('Task overlaps with an existing task for this user');
