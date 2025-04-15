@@ -33,7 +33,7 @@ jobs:
           working-directory: ./
           node-version: "20"
       - name: Run ESLint
-        run: npm run lint
+        run: npm run lint:ci
         working-directory: ./
 
   build:
@@ -59,7 +59,7 @@ jobs:
         with:
           working-directory: ./
           node-version: "20"
-      - name: Run Tests
+      - name: Run Unit Tests
         working-directory: ./
         run: npm run test
 
@@ -73,6 +73,6 @@ jobs:
         with:
           working-directory: ./
           node-version: "20"
-      - name: Run Tests
+      - name: Run E2E Tests
         working-directory: ./
         run: npm run test:e2e
